@@ -1,0 +1,23 @@
+services:
+    david63.reporttotopic.listener:
+        class: david63\reporttotopic\event\listener
+        arguments:
+            - @config
+            - @user
+            - @request
+            - @dbal.conn
+            - %core.root_path%
+            - %core.php_ext%
+            - @template
+        tags:
+            - { name: event.listener }
+
+    david63.reporttotopic.admin.controller:
+        class: david63\reporttotopic\controller\admin_controller
+        arguments:
+            - @config
+            - @request
+            - @dbal.conn			
+            - @template
+            - @user
+            - @service_container
