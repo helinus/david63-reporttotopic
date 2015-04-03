@@ -73,7 +73,6 @@ class admin_controller implements admin_interface
 		add_form_key($form_key);
 
 		// Submit
-
 		if ($this->request->is_set_post('submit'))
 		{
 			// Is the submitted form is valid?
@@ -83,16 +82,11 @@ class admin_controller implements admin_interface
 			}
 
 			// If no errors, process the form data
-			// Set the options the user configured
-			$this->set_options();
-
-			// Get the vars
 			$dest_forum		= $this->request->variable('report2topic_post_forum', 0);
 			$pm_dest_forum	= $this->request->variable('report2topic_pm_forum', 0);
-			$pm_title		= $this->request->variable('report2topic_pm_title', '', true);
-			$post_title		= $this->request->variable('report2topic_post_title', '', true);
-			$pm_template	= $this->request->variable('report2topic_pm_template', '', true);
-			$post_template	= $this->request->variable('report2topic_post_template', '', true);
+
+			// Set the options the user configured
+			$this->set_options();
 
 			// Validate the forum IDs
 			// If valid save the settings.
@@ -114,17 +108,10 @@ class admin_controller implements admin_interface
 			}
 			$this->db->sql_freeresult($result);
 
-			// Save topic title
-			$this->config->set('r2t_pm_title', $pm_title);
-			$this->config->set('r2t_post_title', $post_title);
-
-			// Save the templates
-			$this->config->set('r2t_pm_template', $pm_template);
-			$this->config->set('r2t_post_template', $post_template);
-
 			// Add option settings change action to the admin log
 			$phpbb_log = $this->container->get('log');
 			$phpbb_log->add('admin', $this->user->data['user_id'], $this->user->ip, 'REPORTTOTOPIC_LOG');
+
 			trigger_error($this->user->lang('ACP_REPORTTOTOPIC_CONFIG_SUCCESS') . adm_back_link($this->u_action));
 		}
 
@@ -136,16 +123,16 @@ class admin_controller implements admin_interface
 			'S_DEST_OPTIONS'					=> make_forum_select($dest_forum_id, false, true, true),
 			'S_PM_DEST_OPTIONS'					=> make_forum_select($pm_dest_forum_id, false, true, true),
 			'S_PM_TEMPLATE'						=> isset($this->config['r2t_pm_template']) ? $this->config['r2t_pm_template'] : '',
-			'S_PM_TITLE'						=> isset($this->config['r2t_pm_title']) ? $this->config['r2t_pm_title'] : '',
-			'S_POST_TEMPLATE'					=> isset($this->config['r2t_post_template']) ? $this->config['r2t_post_template'] : '',
 			'S_PM_TEMPLATE_BBCODE_CHECKED'		=> isset($this->config['r2t_pm_template_bbcode']) ? $this->config['r2t_pm_template_bbcode'] : false,
+			'S_PM_TEMPLATE_SIG_CHECKED'			=> isset($this->config['r2t_pm_template_sig']) ? $this->config['r2t_pm_template_sig'] : false,
 			'S_PM_TEMPLATE_SMILIES_CHECKED'		=> isset($this->config['r2t_pm_template_smilies']) ? $this->config['r2t_pm_template_smilies'] : false,
 			'S_PM_TEMPLATE_URLS_CHECKED'		=> isset($this->config['r2t_pm_template_urls']) ? $this->config['r2t_pm_template_urls'] : false,
-			'S_PM_TEMPLATE_SIG_CHECKED'			=> isset($this->config['r2t_pm_template_sig']) ? $this->config['r2t_pm_template_sig'] : false,
+			'S_PM_TITLE'						=> isset($this->config['r2t_pm_title']) ? $this->config['r2t_pm_title'] : '',
+			'S_POST_TEMPLATE'					=> isset($this->config['r2t_post_template']) ? $this->config['r2t_post_template'] : '',
 			'S_POST_TEMPLATE_BBCODE_CHECKED'	=> isset($this->config['r2t_post_template_bbcode']) ? $this->config['r2t_post_template_bbcode'] : false,
+			'S_POST_TEMPLATE_SIG_CHECKED'		=> isset($this->config['r2t_post_template_sig']) ? $this->config['r2t_post_template_sig'] : false,
 			'S_POST_TEMPLATE_SMILIES_CHECKED'	=> isset($this->config['r2t_post_template_smilies']) ? $this->config['r2t_post_template_smilies'] : false,
 			'S_POST_TEMPLATE_URLS_CHECKED'		=> isset($this->config['r2t_post_template_urls']) ? $this->config['r2t_post_template_urls'] : false,
-			'S_POST_TEMPLATE_SIG_CHECKED'		=> isset($this->config['r2t_post_template_sig']) ? $this->config['r2t_post_template_sig'] : false,
 			'S_POST_TITLE'						=> isset($this->config['r2t_post_title']) ? $this->config['r2t_post_title'] : '',
 
 			'U_ACTION'							=> $this->u_action,
@@ -164,13 +151,17 @@ class admin_controller implements admin_interface
 
 	protected function set_options()
 	{
+		$this->config->set('r2t_pm_template', $this->request->variable('report2topic_pm_template', ''));
 		$this->config->set('r2t_pm_template_bbcode', $this->request->variable('report2topic_pm_template_parse_bbcode', '0'));
+		$this->config->set('r2t_pm_template_sig', $this->request->variable('report2topic_pm_template_parse_sig', '0'));
 		$this->config->set('r2t_pm_template_smilies', $this->request->variable('report2topic_pm_template_parse_smilies', '0'));
 		$this->config->set('r2t_pm_template_urls', $this->request->variable('report2topic_pm_template_parse_urls', '0'));
-		$this->config->set('r2t_pm_template_sig', $this->request->variable('report2topic_pm_template_parse_sig', '0'));
+		$this->config->set('r2t_pm_title', $this->request->variable('report2topic_pm_title', ''));
+		$this->config->set('r2t_post_template', $this->request->variable('report2topic_post_template', ''));
 		$this->config->set('r2t_post_template_bbcode', $this->request->variable('report2topic_post_template_parse_bbcode', ''));
+		$this->config->set('r2t_post_template_sig', $this->request->variable('report2topic_post_template_parse_sig', '0'));
 		$this->config->set('r2t_post_template_smilies', $this->request->variable('report2topic_post_template_parse_smilies', '0'));
 		$this->config->set('r2t_post_template_urls', $this->request->variable('report2topic_post_template_parse_urls', '0'));
-		$this->config->set('r2t_post_template_sig', $this->request->variable('report2topic_post_template_parse_sig', '0'));
+		$this->config->set('r2t_post_title', $this->request->variable('report2topic_post_title', ''));
 	}
 }

@@ -37,12 +37,15 @@ class listener implements EventSubscriberInterface
 	/** @var string PHP extension */
 	protected $phpEx;
 
+	/** @var \phpbb\template\template */
+	protected $template;
+
 	/**
 	* Constructor
 	*
-	* @param \phpbb\config\config				$config
-	* @param \phpbb\user						$user
-	* @param \phpbb\request\request				$request
+	* @param \phpbb\config\config				$config		Config object
+	** @param \phpbb\user						$user		User object
+	* @param \phpbb\request\request				$request	Request object
 	* @param \phpbb\db\driver\driver_interface	$db
 	* @param string 							$root_path
 	* @param string 							$php_ext
@@ -73,7 +76,7 @@ class listener implements EventSubscriberInterface
 		return array(
 			'core.user_setup'						=> 'load_language_on_setup',
 			'core.acp_manage_forums_validate_data'	=> 'acp_alter_forum_data',
-			'core.acp_manage_forums_display_form'	=> 'acp_display_forum',
+			'core.acp_manage_forums_display_form'	=> 'acp_display_forum_form',
 			'core.report_post_submit'				=> 'submit_report_post',
 		);
 	}
@@ -97,9 +100,9 @@ class listener implements EventSubscriberInterface
 	}
 
 	/**
-	 * Adjust the forum data array so that the report2topic destination forum
-	 * is saved correctly
-	 * @param	array	$forum_data	The forum data array passed from the manage method
+	 * Adjust the forum data array so that the report2topic destination forum is saved correctly
+	 *
+	 * @param	array	$forum_data	The forum data array passed from the manage event
 	 * @param	array	$errors		Array containing any encountered error messages
 	 * @return	void
 	 */
@@ -135,12 +138,11 @@ class listener implements EventSubscriberInterface
 	}
 
 	/**
-	 * Modify the manage forums pages in the ACP by adding some
-	 * additional template stuff.
-	 * @param	phpbb_hook	$phpbb_hook	The phpBB hook object
+	 * Modify the manage forums pages in the ACP by adding some additional template data
+	 *
 	 * @return	void
 	 */
-	public function acp_display_forum($event)
+	public function acp_display_forum_form($event)
 	{
 		$fid = $this->request->variable('f', 0);
 
@@ -215,7 +217,7 @@ class listener implements EventSubscriberInterface
 		'forum_name'	=> '',
 
 		// Indexing
-		'enable_indexing' => true,
+		'enable_indexing'		=> true,
 		'force_approved_state'	=> true,
 	);
 
@@ -223,20 +225,22 @@ class listener implements EventSubscriberInterface
 	 * A new report is created, create the report topic
 	 * @param	Integer	$pm_id		ID of the reported PM
 	 * @param	Integer	$post_id	ID of the reported post
+	 *
 	 * @return	void
 	 */
 	public function submit_report_post($event)
 	{
-		$post_id = $event['post_id'];
-		$pm_id	 = $event['pm_id'];
+		$forum_data	= $event['forum_data'];
+		$pm_id		= $event['pm_id'];
+		$post_id	= $event['post_id'];
 
 		// Some mode specific data
 		if ($pm_id > 0)
 		{
-			$subject = 'r2t_pm_title';
-			$template = 'r2t_pm_template';
+			$subject	= 'r2t_pm_title';
+			$template	= 'r2t_pm_template';
 
-			// Can't use {REPORT_POST} here!
+			// Cannot use {REPORT_POST} here!
 			unset($this->user->lang['r2t_tokens']['REPORT_POST']);
 
 			// Destination forum
@@ -254,7 +258,6 @@ class listener implements EventSubscriberInterface
 			$template	= 'r2t_post_template';
 
 			// Destination forum
-			$forum_data = $event['forum_data'];
 			$this->post_data['forum_id'] = ($forum_data['r2t_report_forum'] > 0) ? $forum_data['r2t_report_forum'] : $this->config['r2t_dest_forum'];
 
 			// Post options
@@ -270,6 +273,7 @@ class listener implements EventSubscriberInterface
 		// Prepare token replacements
 		$replacing = $tokens = $tokens_replacement = array();
 		$this->prepare_tokens($tokens_replacement, $report_data);
+
 		foreach (array_keys($this->user->lang['r2t_tokens']) as $token)
 		{
 			$tokens[]		= '{' . $token . '}';
@@ -313,6 +317,7 @@ class listener implements EventSubscriberInterface
 	 * Get the report data of the reported post or PM
 	 * @param	Integer	$pm_id		ID of the reported PM
 	 * @param	Integer	$post_id	ID of the reported post
+	 *
 	 * @return	Array	The report data
 	 */
 	private function get_report_data($pm_id = 0, $post_id = 0)
@@ -334,34 +339,35 @@ class listener implements EventSubscriberInterface
 			$sql_ary['SELECT']	.= ', p.post_subject, r.post_id';
 			$sql_ary['FROM']	+= array(POSTS_TABLE => 'p');
 			$sql_ary['WHERE']	= "r.post_id = {$post_id}
-				AND rr.reason_id = r.reason_id
-				AND r.user_id = u.user_id
-				AND r.pm_id = 0
-				AND p.post_id = r.post_id";
+				AND rr.reason_id	= r.reason_id
+				AND r.user_id		= u.user_id
+				AND r.pm_id			= 0
+				AND p.post_id		= r.post_id";
 		}
 		else
 		{
 			$sql_ary['SELECT']	.= ', pm.message_subject, r.pm_id';
 			$sql_ary['FROM']	+= array(PRIVMSGS_TABLE => 'pm');
 			$sql_ary['WHERE']	= "r.pm_id = {$pm_id}
-				AND rr.reason_id = r.reason_id
-				AND r.user_id = u.user_id
-				AND r.post_id = 0
-				AND pm.msg_id = r.pm_id";
+				AND rr.reason_id	= r.reason_id
+				AND r.user_id		= u.user_id
+				AND r.post_id		= 0
+				AND pm.msg_id		= r.pm_id";
 		}
 
 		// Build and run the query
 		$sql	= $this->db->sql_build_query('SELECT', $sql_ary);
 		$result	= $this->db->sql_query($sql);
 		$report	= $this->db->sql_fetchrow($result);
+
 		$this->db->sql_freeresult($result);
 
 		return $report;
 	}
 
 	/**
-	 * Create an array containing all data that *might* be used in the report
-	 * post. The tokens will be replaced later on
+	 * Create an array containing all data that might be used in the report post. The tokens will be replaced later on
+	 *
 	 * @param	Array	$tokens	An array that will be filled with the token replacements for this report
 	 * @param	Array	$report	An array containing the report data
 	 * @return	void
@@ -382,8 +388,8 @@ class listener implements EventSubscriberInterface
 		$title			= (isset($report['post_id'])) ? censor_text($report['post_subject']) : censor_text($report['message_subject']);
 
 		$report_link_params = array(
-			'i'		=> (isset($report['post_id']))  ? 'reports' : 'pm_reports',
-			'mode'	=> (isset($report['post_id']))  ? 'report_details' : 'pm_report_details',
+			'i'		=> (isset($report['post_id'])) ? 'reports' : 'pm_reports',
+			'mode'	=> (isset($report['post_id'])) ? 'report_details' : 'pm_report_details',
 			'r'		=> $report['report_id'],
 		);
 		$report_link = append_sid(generate_board_url() . '/mcp.' . $this->phpEx, $report_link_params);
@@ -401,7 +407,7 @@ class listener implements EventSubscriberInterface
 
 		if (isset($report['post_id']))
 		{
-				$report_post_link_params = array(
+			$report_post_link_params = array(
 				'p'	=> $report['post_id'],
 				'#'	=> 'p' . $report['post_id'],
 			);

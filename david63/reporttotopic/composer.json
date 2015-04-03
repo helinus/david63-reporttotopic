@@ -3,7 +3,7 @@
     "type": "phpbb-extension",
     "description": "Enhances phpBB's reporting system by introducing a set of new features",
     "homepage": "",
-    "version": "1.0.0-b1",
+    "version": "0.1.0-beta",
     "time": "2015-04-01",
     "keywords": [
 		"phpbb",
@@ -22,7 +22,7 @@
         },
         {
             "name": "Daniel",
-            "username": "*Daniel",
+            "username": "Danielx64",
             "email": "",
             "homepage": "",
             "role": "Mod developer"
@@ -30,6 +30,13 @@
         {
             "name": "Erik FrÃ¨rejean",
             "username": "*Erik",
+            "email": "",
+            "homepage": "",
+            "role": "Original developer"
+        },
+        {
+            "name": "David King",
+            "username": "imkingdavid",
             "email": "",
             "homepage": "",
             "role": "Original developer"
@@ -45,9 +52,9 @@
             "phpbb/phpbb": ">=3.1.3,<3.2.*@dev"
         },
         "version-check": {
-            "host": "www.phpbb.com",
-            "directory": "/customise/db/extension/login_redirect",
-            "filename": "version_check"
-        }
+			"host": "webworld.xyz",
+			"directory": "/versioncheck",
+			"filename": "reporttotopic_versions.json"
+		}
     }
 }
