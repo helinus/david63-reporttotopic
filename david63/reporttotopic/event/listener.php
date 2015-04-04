@@ -284,6 +284,10 @@ class listener implements EventSubscriberInterface
 		$post = str_replace($tokens, $replacing, $this->config[$template]);
 
 		// Get the message parser
+		if (!class_exists('bbcode'))
+		{
+			include($this->root_path . 'includes/bbcode.' . $this->phpEx);
+		}
 		if (!class_exists('parse_message'))
 		{
 			include($this->root_path . 'includes/message_parser.' . $this->phpEx);
