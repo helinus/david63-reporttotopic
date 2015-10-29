@@ -1,9 +1,9 @@
 {
     "name": "david63/reporttotopic",
     "type": "phpbb-extension",
-    "description": "Enhances phpBB's reporting system by introducing a set of new features",
+    "description": "Enhance phpBB's reporting system by introducing a set of new features",
     "homepage": "",
-    "version": "0.1.1-beta",
+    "version": "0.2.0-beta",
     "time": "2015-04-01",
     "keywords": [
 		"phpbb",
@@ -49,7 +49,7 @@
     "extra": {
         "display-name": "Report to topic",
         "soft-require": {
-            "phpbb/phpbb": ">=3.1.3,<3.2.*@dev"
+            "phpbb/phpbb": ">=3.1.4,<3.2.*@dev"
         },
         "version-check": {
 			"host": "webworld.xyz",

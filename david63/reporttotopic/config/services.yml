@@ -9,6 +9,8 @@ services:
             - %core.root_path%
             - %core.php_ext%
             - @template
+            - @service_container
+            - @notification_manager
         tags:
             - { name: event.listener }
 
@@ -17,7 +19,26 @@ services:
         arguments:
             - @config
             - @request
-            - @dbal.conn			
+            - @dbal.conn
             - @template
             - @user
             - @service_container
+
+    david63.reporttotopic.notification.type.reporttotopic:
+        class: david63\reporttotopic\notification\reporttotopic
+        scope: prototype # scope MUST be prototype for this to work!
+        arguments:
+            - @user_loader
+            - @dbal.conn
+            - @cache.driver
+            - @user
+            - @auth
+            - @config
+            - @controller.helper
+            - %core.root_path%
+            - %core.php_ext%
+            - %tables.notification_types%
+            - %tables.notifications%
+            - %tables.user_notifications%
+        tags:
+            - { name: notification.type }

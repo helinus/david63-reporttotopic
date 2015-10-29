@@ -51,6 +51,22 @@
 		</dl>
     </fieldset>
 
+	<fieldset>
+		<legend>{L_ACP_REPORTTOTOPIC_CONFIG_OPTIONS}</legend>
+
+		<dl>
+			<dt><label for="r2t_lock_topic">{L_LOCK_TOPIC}{L_COLON}</label><br /><span>{L_LOCK_TOPIC_EXPLAIN}</span></dt>
+			<dd><label><input type="radio" class="radio" name="r2t_lock_topic" value="0" id="r2t_lock_topic"<!-- IF not S_LOCK_TOPIC --> checked="checked"<!-- ENDIF -->/> {L_YES}</label>
+				<label><input type="radio" class="radio" name="r2t_lock_topic" value="1" <!-- IF S_LOCK_TOPIC --> checked="checked"<!-- ENDIF --> /> {L_NO}</label></dd>
+		</dl>
+
+		<dl>
+			<dt><label for="r2t_hide_topic_link">{L_HIDE_TOPIC_LINK}{L_COLON}</label><br /><span>{L_HIDE_TOPIC_LINK_EXPLAIN}</span></dt>
+			<dd><label><input type="radio" class="radio" name="r2t_hide_topic_link" value="0" id="r2t_hide_topic_link"<!-- IF not S_HIDE_TOPIC_LINK --> checked="checked"<!-- ENDIF -->/> {L_YES}</label>
+				<label><input type="radio" class="radio" name="r2t_hide_topic_link" value="1" <!-- IF S_HIDE_TOPIC_LINK --> checked="checked"<!-- ENDIF --> /> {L_NO}</label></dd>
+		</dl>
+	</fieldset>
+
     <fieldset class="submit-buttons">
 		<input class="button1" type="submit" id="submit" name="submit" value="{L_SUBMIT}" />&nbsp;
 		<input class="button2" type="reset" id="reset" name="reset" value="{L_RESET}" />

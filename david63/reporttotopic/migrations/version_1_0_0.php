@@ -15,6 +15,8 @@ class version_1_0_0 extends \phpbb\db\migration\migration
 	{
 		return array(
 			array('config.add', array('r2t_dest_forum', '1')),
+			array('config.add', array('r2t_lock_topic', '1')),
+			array('config.add', array('r2t_hide_topic_link', '0')),
 			array('config.add', array('r2t_pm_dest_forum', '1')),
 			array('config.add', array('r2t_pm_template', 'Title: {TITLE}
 Reporter: {REPORTER_FULL}
@@ -37,6 +39,7 @@ Link to report in MCP: {REPORT_LINK}')),
 			array('config.add', array('r2t_post_template_smilies', '1')),
 			array('config.add', array('r2t_post_template_urls', '1')),
 			array('config.add', array('r2t_post_title', 'Topic/Post report: {TITLE}')),
+			array('config.add', array('r2t_report_id', '0')),
 			array('config.add', array('version_reporttotopic', '1.0.0')),
 
 			// Add the ACP module
@@ -58,6 +61,10 @@ Link to report in MCP: {REPORT_LINK}')),
 				$this->table_prefix . 'forums'	=> array(
 					'r2t_report_forum'	=> array('MTEXT_UNI', ''),
 				),
+
+				$this->table_prefix . 'reports'	=> array(
+					'r2t_report_topic'	=> array('INT:8', 0),
+				),
 			),
 		);
 	}
@@ -74,6 +81,10 @@ Link to report in MCP: {REPORT_LINK}')),
 			'drop_columns' => array(
 				$this->table_prefix . 'forums'	=> array(
 					'r2t_report_forum',
+				),
+
+				$this->table_prefix . 'reports'	=> array(
+					'r2t_report_topic',
 				),
 			),
 		);

@@ -94,6 +94,7 @@ class admin_controller implements admin_interface
 				FROM ' . FORUMS_TABLE . '
 				WHERE ' . $this->db->sql_in_set('forum_id', array($dest_forum, $pm_dest_forum));
 			$result	= $this->db->sql_query($sql);
+
 			while ($forum = $this->db->sql_fetchrow($result))
 			{
 				if ($forum['forum_id'] == $dest_forum)
@@ -121,6 +122,8 @@ class admin_controller implements admin_interface
 		// Output the page
 		$this->template->assign_vars(array(
 			'S_DEST_OPTIONS'					=> make_forum_select($dest_forum_id, false, true, true),
+			'S_HIDE_TOPIC_LINK'					=> isset($this->config['r2t_hide_topic_link']) ? $this->config['r2t_hide_topic_link'] : '',
+			'S_LOCK_TOPIC'						=> isset($this->config['r2t_lock_topic']) ? $this->config['r2t_lock_topic'] : '',
 			'S_PM_DEST_OPTIONS'					=> make_forum_select($pm_dest_forum_id, false, true, true),
 			'S_PM_TEMPLATE'						=> isset($this->config['r2t_pm_template']) ? $this->config['r2t_pm_template'] : '',
 			'S_PM_TEMPLATE_BBCODE_CHECKED'		=> isset($this->config['r2t_pm_template_bbcode']) ? $this->config['r2t_pm_template_bbcode'] : false,
@@ -151,6 +154,8 @@ class admin_controller implements admin_interface
 
 	protected function set_options()
 	{
+		$this->config->set('r2t_lock_topic', $this->request->variable('r2t_lock_topic', ''));
+		$this->config->set('r2t_hide_topic_link', $this->request->variable('r2t_hide_topic_link', ''));
 		$this->config->set('r2t_pm_template', $this->request->variable('report2topic_pm_template', ''));
 		$this->config->set('r2t_pm_template_bbcode', $this->request->variable('report2topic_pm_template_parse_bbcode', '0'));
 		$this->config->set('r2t_pm_template_sig', $this->request->variable('report2topic_pm_template_parse_sig', '0'));

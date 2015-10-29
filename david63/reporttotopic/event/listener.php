@@ -35,33 +35,44 @@ class listener implements EventSubscriberInterface
 	protected $root_path;
 
 	/** @var string PHP extension */
-	protected $phpEx;
+	protected $php_ext;
 
 	/** @var \phpbb\template\template */
 	protected $template;
+
+	/** @var ContainerInterface */
+	protected $container;
+
+	/** @var \phpbb\notification\manager */
+	protected $notification_manager;
 
 	/**
 	* Constructor
 	*
 	* @param \phpbb\config\config				$config		Config object
-	** @param \phpbb\user						$user		User object
+	* @param \phpbb\user						$user		User object
 	* @param \phpbb\request\request				$request	Request object
 	* @param \phpbb\db\driver\driver_interface	$db
 	* @param string 							$root_path
 	* @param string 							$php_ext
 	* @param \phpbb\template\template			$template	Template object
+	* @param ContainerInterface					$container	Service container interface
+	* @param \phpbb\notification\manager		$notification_manager
 	*
 	* @access public
 	*/
-	public function __construct(\phpbb\config\config $config, \phpbb\user $user, \phpbb\request\request $request, \phpbb\db\driver\driver_interface $db, $root_path, $php_ext, \phpbb\template\template $template)
+	public function __construct(\phpbb\config\config $config, \phpbb\user $user, \phpbb\request\request $request, \phpbb\db\driver\driver_interface $db, $root_path, $php_ext, \phpbb\template\template $template, $container, \phpbb\notification\manager $notification_manager)
+// Fix Container +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	{
-		$this->config		= $config;
-		$this->user			= $user;
-		$this->request		= $request;
-		$this->db			= $db;
-		$this->root_path	= $root_path;
-		$this->phpEx		= $php_ext;
-		$this->template		= $template;
+		$this->config				= $config;
+		$this->user					= $user;
+		$this->request				= $request;
+		$this->db					= $db;
+		$this->root_path			= $root_path;
+		$this->php_ext				= $php_ext;
+		$this->template				= $template;
+		$this->container			= $container;
+		$this->notification_manager = $notification_manager;
 	}
 
 	/**
@@ -74,12 +85,49 @@ class listener implements EventSubscriberInterface
 	static public function getSubscribedEvents()
 	{
 		return array(
-			'core.user_setup'						=> 'load_language_on_setup',
-			'core.acp_manage_forums_validate_data'	=> 'acp_alter_forum_data',
-			'core.acp_manage_forums_display_form'	=> 'acp_display_forum_form',
-			'core.report_post_submit'				=> 'submit_report_post',
+			'core.user_setup'								=> 'load_language_on_setup',
+			'core.acp_manage_forums_validate_data'			=> 'acp_alter_forum_data',
+			'core.acp_manage_forums_display_form'			=> 'acp_display_forum_form',
+			'core.report_post_submit'						=> 'submit_report_post',
+			'core.submit_post_end'							=> 'submit_post_end',
+			'core.mcp_reports_close_after'					=> 'lock_report_topic',
+			'core.viewtopic_modify_post_row'				=> 'hide_report_link',
+			'core.viewforum_modify_topicrow'				=> 'hide_topic_icon',
+			'core.notification_manager_add_notifications'	=> 'fix_notification',
+			'core.report_post_test'	=> 'tester',
 		);
 	}
+
+	public function tester($event)
+	{
+		$report_data = $event['report_data'];
+		$row = $event['row'];
+		$forum_data = $event['forum_data'];
+		$report_text = $event['report_text'];
+/****
+		debug('report data', $report_data, false);
+		debug('row', $row, false);
+		debug('forum data', $forum_data, false);
+		debug('report text', $report_text, true);
+****/
+	}
+
+	public function fix_notification($event)
+	{
+		$notification_type_name	= $event['notification_type_name'];
+		$data					= $event['data'];
+		$notify_users			= $event['notify_users'];
+		$options				= $event['options'];
+		$item_id				= $event['item_id'];
+/****
+		debug('Type', $notification_type_name, false);
+		debug('Data', $data, false);
+		debug('Users', $notify_users, false);
+		debug('Item', $item_id, false);
+		debug('Options', $options, false);
+****/
+	}
+
 
 	/**
 	* Load common login redirect language files during user setup
@@ -95,7 +143,6 @@ class listener implements EventSubscriberInterface
 			'ext_name' => 'david63/reporttotopic',
 			'lang_set' => 'reporttotopic_common',
 		);
-
 		$event['lang_set_ext'] = $lang_set_ext;
 	}
 
@@ -185,11 +232,47 @@ class listener implements EventSubscriberInterface
 	}
 
 	/**
+	 * Hide the report message in viewtopic
+	 *
+	 * @return	void
+	 */
+	public function hide_report_link($event)
+	{
+		if ($this->config['r2t_hide_topic_link'])
+		{
+			$post_row = $event['post_row'];
+
+			$post_row = array_merge($post_row, array(
+				'S_POST_REPORTED' => false,
+			));
+			$event->offsetSet('post_row', $post_row);
+		}
+	}
+
+	/**
+	 * Hide the report icon in viewforum
+	 *
+	 * @return	void
+	 */
+	public function hide_topic_icon($event)
+	{
+		if ($this->config['r2t_hide_topic_link'])
+		{
+			$topic_row = $event['topic_row'];
+
+			$topic_row = array_merge($topic_row, array(
+				'S_TOPIC_REPORTED' => false,
+			));
+			$event->offsetSet('topic_row', $topic_row);
+		}
+	}
+
+	/**
 	 * @var array The post data array
 	 */
 	private $post_data = array(
-		'forum_id'	=> 0,
 		'topic_id'	=> 0,
+		'forum_id'	=> 0,
 		'icon_id'	=> false,
 
 		// Defining Post Options
@@ -230,9 +313,11 @@ class listener implements EventSubscriberInterface
 	 */
 	public function submit_report_post($event)
 	{
-		$forum_data	= $event['forum_data'];
-		$pm_id		= $event['pm_id'];
-		$post_id	= $event['post_id'];
+		$forum_data		= $event['forum_data'];
+		$report_data	= $event['report_data'];
+		$pm_id			= $event['pm_id'];
+		$post_id		= $event['post_id'];
+		$report_id		= $event['report_id'];
 
 		// Some mode specific data
 		if ($pm_id > 0)
@@ -251,20 +336,39 @@ class listener implements EventSubscriberInterface
 			$this->post_data['enable_smilies']	= ($this->config['r2t_pm_template_smilies']) ? true : false;
 			$this->post_data['enable_urls']		= ($this->config['r2t_pm_template_urls']) ? true : false;
 			$this->post_data['enable_sig']		= ($this->config['r2t_pm_template_sig']) ? true : false;
+
+			$this->build_topic('pm');
 		}
 		else if ($post_id > 0)
 		{
-			$subject	= 'r2t_post_title';
-			$template	= 'r2t_post_template';
+			$subject			= 'r2t_post_title';
+			$template			= 'r2t_post_template';
+			$report_forum_id	= ($forum_data['r2t_report_forum'] > 0) ? $forum_data['r2t_report_forum'] : $this->config['r2t_dest_forum'];
+
+			// Let's make sure that the destination forum exists
+			$sql = 'SELECT forum_id
+				FROM ' . FORUMS_TABLE . "
+				WHERE forum_id = $report_forum_id";
+			$result	= $this->db->sql_query($sql);
+
+			if (!$row = $this->db->sql_fetchrow($result))
+			{
+				$phpbb_log = $this->container->get('log');
+				$phpbb_log->add('admin', $this->user->data['user_id'], $this->user->ip, 'NO_FORUM_LOG');
+				return;
+			}
+			$this->db->sql_freeresult($result);
 
 			// Destination forum
-			$this->post_data['forum_id'] = ($forum_data['r2t_report_forum'] > 0) ? $forum_data['r2t_report_forum'] : $this->config['r2t_dest_forum'];
+			$this->post_data['forum_id'] = $report_forum_id;
 
 			// Post options
 			$this->post_data['enable_bbcode']	= ($this->config['r2t_post_template_bbcode']) ? true : false;
 			$this->post_data['enable_smilies']	= ($this->config['r2t_post_template_smilies']) ? true : false;
 			$this->post_data['enable_urls']		= ($this->config['r2t_post_template_urls']) ? true : false;
 			$this->post_data['enable_sig']		= ($this->config['r2t_post_template_sig']) ? true : false;
+
+			$this->build_topic('post');
 		}
 
 		// Fetch the report data
@@ -282,15 +386,12 @@ class listener implements EventSubscriberInterface
 
 		// Prepare the post
 		$post = str_replace($tokens, $replacing, $this->config[$template]);
+		$this->config->set('r2t_report_id', $report_id);
 
 		// Get the message parser
-		if (!class_exists('bbcode'))
-		{
-			include($this->root_path . 'includes/bbcode.' . $this->phpEx);
-		}
 		if (!class_exists('parse_message'))
 		{
-			include($this->root_path . 'includes/message_parser.' . $this->phpEx);
+			include($this->root_path . 'includes/message_parser.' . $this->php_ext);
 		}
 
 		// Load the message parser
@@ -312,9 +413,87 @@ class listener implements EventSubscriberInterface
 		// And finally submit
 		if (!function_exists('submit_post'))
 		{
-			include($this->root_path . 'includes/functions_posting.' . $this->phpEx);
+			include($this->root_path . 'includes/functions_posting.' . $this->php_ext);
 		}
 		submit_post('post', $this->post_data['topic_title'], '', POST_NORMAL, $poll_data, $this->post_data);
+
+		// Add the notification
+		$this->send_notification($report_data);
+	}
+
+	/**
+	* Update the reports table with the topic ID
+	*
+	* @param object $event The event object
+	* @return null
+	* @access public
+	*/
+	public function submit_post_end($event)
+	{
+		$data		= $event['data'];
+		$topic_id	= $data['topic_id'];
+		$report_id	= $this->config['r2t_report_id'];
+
+		$sql = 'UPDATE ' . REPORTS_TABLE . "
+			SET r2t_report_topic = $topic_id
+			WHERE report_id = $report_id";
+		$this->db->sql_query($sql);
+
+		// Make sure the variable is empty for next report
+		$this->config->set('r2t_report_id', '0');
+	}
+
+	public function build_topic($mode)
+	{
+		switch ($mode)
+		{
+			case 'post':
+			break;
+
+			case 'pm':
+			break;
+
+			case 'close':
+			break;
+		}
+	}
+
+	/**
+	* Lock the post report topic when the report is closed
+	*
+	* @param object $event The event object
+	* @return null
+	* @access public
+	*/
+	public function lock_report_topic($event)
+	{
+		if ($this->config['r2t_lock_topic'])
+		{
+			$report_id_list = $event['report_id_list'];
+
+			foreach($report_id_list as $report_id)
+			{
+				// Get the topic id for the report and lock the topic
+				$sql = 'SELECT r2t_report_topic
+					FROM ' . REPORTS_TABLE . "
+					WHERE report_id = $report_id";
+
+				$result		= $this->db->sql_query($sql);
+				$topic_id	= $this->db->sql_fetchfield('r2t_report_topic', false, $result);
+				$this->db->sql_freeresult($result);
+
+				if ($topic_id > 0)
+				{
+					$this->build_topic('close');
+
+					$sql = 'UPDATE ' . TOPICS_TABLE . '
+						SET topic_status = ' . ITEM_LOCKED . "
+						WHERE topic_id = $topic_id";
+
+					$this->db->sql_query($sql);
+				}
+			}
+		}
 	}
 
 	/**
@@ -380,7 +559,7 @@ class listener implements EventSubscriberInterface
 	{
 		if (!function_exists('get_username_string'))
 		{
-			require $this->root_path . 'includes/functions_content.' . $this->phpEx;
+			require $this->root_path . 'includes/functions_content.' . $this->php_ext;
 		}
 
 		// Build the data
@@ -396,7 +575,7 @@ class listener implements EventSubscriberInterface
 			'mode'	=> (isset($report['post_id'])) ? 'report_details' : 'pm_report_details',
 			'r'		=> $report['report_id'],
 		);
-		$report_link = append_sid(generate_board_url() . '/mcp.' . $this->phpEx, $report_link_params);
+		$report_link = append_sid(generate_board_url() . '/mcp.' . $this->php_ext, $report_link_params);
 
 		// Fill the array
 		$tokens = array(
@@ -415,9 +594,32 @@ class listener implements EventSubscriberInterface
 				'p'	=> $report['post_id'],
 				'#'	=> 'p' . $report['post_id'],
 			);
-			$report_post_link = append_sid(generate_board_url() . '/viewtopic.' . $this->phpEx, $report_post_link_params);
+			$report_post_link = append_sid(generate_board_url() . '/viewtopic.' . $this->php_ext, $report_post_link_params);
 
 			$tokens['REPORT_POST'] = $report_post_link;
 		}
+	}
+
+	/**
+	* Send notification to users
+	*
+	* @param int $topic_id The topic identifier
+	* @return null
+	* @access public
+	*/
+	public function send_notification($report_data)
+	{
+		// Increment our notifications sent counter
+		$this->config->increment('reporttotopic_notification', 1);
+
+		// Store the notification data we will use in an array
+		$notification_data = array_merge($report_data, array(
+			'report_id'			=> $report_data['report_id'],
+			'notification_id'	=> $this->config['reporttotopic_notification'],
+		));
+
+		// Create the notification
+		$phpbb_notifications = $this->container->get('notification_manager');
+		$phpbb_notifications->add_notifications('david63.reporttotopic.notification.type.reporttotopic', $notification_data);
 	}
 }

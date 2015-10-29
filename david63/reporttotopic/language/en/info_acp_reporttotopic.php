@@ -40,10 +40,19 @@ $lang = array_merge($lang, array(
 	'ACP_REPORTTOTOPIC'					=> 'Report to topic',
 	'ACP_REPORTTOTOPIC_CONFIG'			=> 'Report to topic configuration',
 	'ACP_REPORTTOTOPIC_CONFIG_EXPLAIN'	=> 'The main report to topic configuration.',
+	'ACP_REPORTTOTOPIC_CONFIG_OPTIONS'	=> 'Options',
 	'ACP_REPORTTOTOPIC_CONFIG_SUCCESS'	=> 'The main configuration has been updated successfully!',
 	'ACP_REPORTTOTOPIC_PM_CONFIG'		=> 'PM report configuration',
 
 	'FORUM_NOT_EXISTS'					=> 'The requested forum (%1$s) does not exist',
+
+	'HIDE_TOPIC_LINK'					=> 'Hide links',
+	'HIDE_TOPIC_LINK_EXPLAIN'			=> 'Hide the report link to MCP in viewtopic and the report icon in viewforum.',
+
+	'LOCK_TOPIC'						=> 'Lock topic',
+	'LOCK_TOPIC_EXPLAIN'				=> 'Lock the report topic when the report is closed.',
+
+	'NO_FORUM_LOG'						=> '<strong>The report to topic destination forum does not exist</strong>',
 
 	'PARSE_SIG'							=> 'Display signature',
 
@@ -61,7 +70,6 @@ $lang = array_merge($lang, array(
 	'R2T_POST_TEMPLATE_EXPLAIN'			=> 'Here you can define how the post report posts will be formatted. By using tokens you can specify which information will be displayed. You can use BBCodes in the post template.',
 	'R2T_SELECT_DEST_FORUM'				=> 'Report destination forum',
 	'R2T_SELECT_DEST_FORUM_EXPLAIN'		=> 'Select the forum into which reports that are made from this forum will be posted. If not selected the default forum will be used.',
-
 	'REPORTTOTOPIC_LOG'					=> '<strong>Report to topic settings updated</strong>',
 
 	'TOKEN'								=> 'Token',

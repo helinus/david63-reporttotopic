@@ -37,6 +37,8 @@ if (empty($lang) || !is_array($lang))
 //
 
 $lang = array_merge($lang, array(
+	'R2T_NOTIFICATION'	=> 'R2Topic',
+
 	'r2t_tokens'	=> array(
 		'REPORTER'		=> 'Username of the reporter.',
 		'REPORTER_FULL'	=> 'Full profile link to the profile of the reporter',
